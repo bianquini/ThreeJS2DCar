@@ -11,9 +11,6 @@ render.setClearColor(0x101010);
 var canvas = render.domElement;
 document.body.appendChild(canvas);
 
-//Movimentação do Mouse
-var controleCamera = new THREE.OrbitControls(camera, canvas);
-
 //Luz
 var luz = new THREE.DirectionalLight(0xffffff, 1);
 luz.position.setScalar(15);
@@ -70,9 +67,56 @@ var linha = new THREE.Line(geometriaLinha, materialLinha);
 cena.add(linha);
 //Fim do Spline
 
+//Criando a caixa
+var boxGeometry = new THREE.BoxGeometry(0.05, 0.15, 0.05);
+var boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+var cubo = new THREE.Mesh(boxGeometry, boxMaterial);
+cubo.position.set(-0.85, 0.16, 0);
+cena.add(cubo);
+
+// var up = new THREE.Vector3( 0, 1, 0 );
+// var t = 0;
+
 //Renderiza na Tela
 function desenhar() {
+    // path = curva.getPoint(t);
+    // cubo.position.set(path.x,path.y,path.z);
+    // tangente = path.getTangent(t).normalize();
+    // radianos = Math.acos(up.dot(tangente));
+    // cubo.quaternion.setFromAxisAngle()
+
     render.render(cena, camera);
     requestAnimationFrame(desenhar);
 }
 requestAnimationFrame(desenhar);
+
+
+
+//Movimentação da Camera
+var xi;
+var yi;
+
+canvas.addEventListener("mousedown", function (e) {
+    xi = e.offsetX;
+    yi = e.offsetY;
+
+}, false);
+
+canvas.addEventListener("mousemove", function (e) {
+
+    if (e.buttons == 1) { //botão esquerdo do mouse
+        camera.position.x = 8 * (xi - e.offsetX) / canvas.width;
+        camera.position.y = 8 * (e.offsetY - yi) / canvas.height;
+    }
+    
+    if(e.buttons == 2 ){ //botão direito do mouse
+        camera.position.y = 3 * Math.sin((e.offsetY - yi)*Math.PI / 180);
+        camera.position.z = 3 * Math.cos((e.offsetY - yi)*Math.PI / 180);
+        camera.lookAt(cena.position);
+    }
+
+    if (e.buttons == 4) { //scroll do mouse
+        camera.position.z = 0.2 * (e.offsetY - yi);
+    }
+
+}, false);
