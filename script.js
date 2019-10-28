@@ -11,22 +11,43 @@ render.setClearColor(0x101010);
 var canvas = render.domElement;
 document.body.appendChild(canvas);
 
+
+var posicao = 0;
+var angulo = 0;
+
+
+
+//sombra
+render.shadowMap.enabled = true;
+render.shadowMap.type = THREE.BasicShadowMap;
+
 //Luz
-var luz = new THREE.DirectionalLight(0xffffff, 1);
-luz.position.setScalar(15);
+var luz = new THREE.AmbientLight(0xffffff, 0.4);
+// luz.position.setScalar(15);
 cena.add(luz);
+
+//Cria um holofote para projetar a sombra
+var light = new THREE.PointLight( 0xffffff, 0.8,18 );
+light.position.set(0, 0, 3);
+light.castShadow = true;  
+light.shadow.camera.near = 0.1;
+light.shadow.camera.far = 25;         
+cena.add( light );
+
+
 
 //Imagem de fundo
 var texture = new THREE.TextureLoader().load('TrackModel.png');
 var backgroundMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(2, 2, 0),
-    new THREE.MeshBasicMaterial({
+    new THREE.MeshPhongMaterial({
         map: texture
     }));
 backgroundMesh.receiveShadow = true;
 cena.add(backgroundMesh);
 
-//Spline
+
+//Spline pista
 var curva = new THREE.SplineCurve([
     new THREE.Vector3(-0.85, 0.16, 0),
     new THREE.Vector3(-0.8, 0.78, 0),
@@ -51,8 +72,8 @@ var curva = new THREE.SplineCurve([
     new THREE.Vector3(-0.85, 0.16, 0)
 ]);
 
-var caminho = new THREE.Path(curva.getPoints(100));
-var geometriaLinha = caminho.createPointsGeometry(50);
+var caminho = new THREE.Path(curva.getPoints(300));
+var geometriaLinha = caminho.createPointsGeometry(300);
 var materialPonto = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false });
 
 for (let p of curva.points) {
@@ -65,26 +86,69 @@ for (let p of curva.points) {
 var materialLinha = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
 var linha = new THREE.Line(geometriaLinha, materialLinha);
 cena.add(linha);
-//Fim do Spline
+
+//fim spline da pista
+
+
+
+//Spline nuvem
+
+var splineCloud = new THREE.SplineCurve([
+    new THREE.Vector3(-0.85, 0.16, 1),
+    new THREE.Vector3(-0.8, 0.78, 1),
+    new THREE.Vector3(-0.4, 0.8, 1),
+    new THREE.Vector3(-0.20, 0.43, 1),
+    new THREE.Vector3(0.2, 0.41, 1),
+    new THREE.Vector3(0.25, 0.2, 1),
+    new THREE.Vector3(-0.15, 0, 1),
+    new THREE.Vector3(-0.85, 0.16, 1),
+
+]);
+
+var caminhoNuvem = new THREE.Path(splineCloud.getPoints(300));
+var geometriaLinhaNuvem = caminhoNuvem.createPointsGeometry(300);
+var materialPontoNuvem = new THREE.PointsMaterial({ size: 10, sizeAttenuation: false });
+
+for (let s of splineCloud.points) {
+    var geometriaPontoNuvem = new THREE.Geometry();
+    geometriaPontoNuvem.vertices.push(new THREE.Vector3(s.x, s.y, s.z));
+    var pontoNuvem = new THREE.Points(geometriaPontoNuvem, materialPontoNuvem);
+    cena.add(pontoNuvem);
+}
+
+
+var materialNuvem = new THREE.LineBasicMaterial({ color: 0xFFFFFF });
+var linhaNuvem = new THREE.Line(geometriaLinhaNuvem, materialNuvem);
+linhaNuvem.position.set(0,0,1);
+cena.add(linhaNuvem);
+//Fim do Spline das nuvens
+
+
+//sol
+var sunGeometry = new THREE.SphereGeometry(0.1,50,50);
+var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+var sol = new THREE.Mesh(sunGeometry, sunMaterial);
+sol.position.set(0, 0, 2);
+sol.castShadow = false;
+sol.receiveShadow = false;
+cena.add(sol);
+
+
 
 //Criando a caixa
 var boxGeometry = new THREE.BoxGeometry(0.05, 0.15, 0.05);
-var boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+var boxMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
 var cubo = new THREE.Mesh(boxGeometry, boxMaterial);
 cubo.position.set(-0.85, 0.16, 0);
+cubo.castShadow = false;
+cubo.receiveShadow = true;
 cena.add(cubo);
 
-// var up = new THREE.Vector3( 0, 1, 0 );
-// var t = 0;
 
 //Renderiza na Tela
 function desenhar() {
-    // path = curva.getPoint(t);
-    // cubo.position.set(path.x,path.y,path.z);
-    // tangente = path.getTangent(t).normalize();
-    // radianos = Math.acos(up.dot(tangente));
-    // cubo.quaternion.setFromAxisAngle()
 
+    this.movimento();
     render.render(cena, camera);
     requestAnimationFrame(desenhar);
 }
@@ -120,3 +184,35 @@ canvas.addEventListener("mousemove", function (e) {
     }
 
 }, false);
+
+
+
+// movimento do objeto
+function movimento() {
+    // Adicionando a posição para o movimento
+    posicao += 0.001;
+  
+    if (posicao > 1.0) {
+      posicao = 0.001;
+    }
+    // Obtendo o ponto da posição
+    var ponto = caminho.getPointAt(posicao);
+    cubo.position.x = ponto.x;
+    cubo.position.y = ponto.y;
+  
+    var angulo = getAngulo(posicao);
+    // Define o quaternion
+    cubo.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angulo);
+}
+
+function getAngulo(posicao) {
+    // Pegando a tangent 2D da curva
+    var tangente = caminho.getTangent(posicao).normalize();
+  
+    // Mudando a tangent para 3D
+    
+    angulo = -Math.atan(tangente.x / tangente.y);
+  
+    return angulo;
+  }
+  
