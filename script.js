@@ -2,126 +2,58 @@
 //Inicialização da Câmera
 var cena = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 1.8);
-
+//camera.position.set(0, 0, 1.8);
+camera.position.set(-0.83,0.15,0.2);
 //Inicialização do Canvas
-var render = new THREE.WebGLRenderer({
-    antialias: true
-});
-render.setSize(window.innerWidth, window.innerHeight);
-render.setClearColor(0x101010);
-var canvas = render.domElement;
+var scenario = new Scenario();
+var render = scenario.getRender();
+var canvas = scenario.getCanvas();
 document.body.appendChild(canvas);
-
 
 var posicao = 0;
 var angulo = 0;
 
-
-//sombra
-render.shadowMap.enabled = true;
-render.shadowMap.type = THREE.BasicShadowMap;
-
 //Luz
-var luz = new THREE.AmbientLight(0xaaaaaa, 1);
-luz.position.set(0,0,1);
+var luz = scenario.buildAmbientLight(0, 0, 1);
 cena.add(luz);
 
 //Imagem de fundo
-var texture = new THREE.TextureLoader().load('TrackModel.png');
-var backgroundMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(2, 2, 0),
-    new THREE.MeshPhongMaterial({
-        map: texture
-    }));
-backgroundMesh.receiveShadow = true;
-cena.add(backgroundMesh);
+var background = scenario.buildBackgroundImage('TrackModel.png', 2, 2, 0);
+cena.add(background);
 
 
 //Spline pista
-var curva = new THREE.SplineCurve([
-    new THREE.Vector3(-0.85, 0.16, 0),
-    new THREE.Vector3(-0.8, 0.78, 0),
-    new THREE.Vector3(-0.4, 0.8, 0),
-    new THREE.Vector3(-0.20, 0.43, 0),
-    new THREE.Vector3(0.2, 0.41, 0),
-    new THREE.Vector3(0.35, 0.82, 0),
-    new THREE.Vector3(0.7, 0.82, 0),
-    new THREE.Vector3(0.86, 0.48, 0),
-    new THREE.Vector3(0.73, 0.2, 0),
-    new THREE.Vector3(-0.25, -0.07, 0),
-    new THREE.Vector3(-0.1, -0.25, 0),
-    new THREE.Vector3(0.66, -0.25, 0),
-    new THREE.Vector3(0.85, -0.55, 0),
-    new THREE.Vector3(0.66, -0.8, 0),
-    new THREE.Vector3(0.24, -0.81, 0),
-    new THREE.Vector3(0.17, -0.63, 0),
-    new THREE.Vector3(-0.1, -0.63, 0),
-    new THREE.Vector3(-0.37, -0.87, 0),
-    new THREE.Vector3(-0.7, -0.9, 0),
-    new THREE.Vector3(-0.85, -0.5, 0),
-    new THREE.Vector3(-0.85, 0.16, 0)
-]);
+var curva = scenario.buildSpline();
 
 var caminho = new THREE.Path(curva.getPoints(300));
-var geometriaLinha = caminho.createPointsGeometry(300);
 var materialPonto = new THREE.PointsMaterial({
     size: 10,
     sizeAttenuation: false
 });
 
 for (let p of curva.points) {
-    var geometriaPonto = new THREE.Geometry();
-    geometriaPonto.vertices.push(new THREE.Vector3(p.x, p.y, p.z));
-    var ponto = new THREE.Points(geometriaPonto, materialPonto);
+    var ponto = scenario.buildPoint(p.x, p.y, p.z);
     cena.add(ponto);
 }
 
-var materialLinha = new THREE.LineBasicMaterial({
-    color: 0xFFFFFF
-});
-var linha = new THREE.Line(geometriaLinha, materialLinha);
+var linha = scenario.buildLine();
 cena.add(linha);
 
-//fim spline da pista
-
-
-
-
 //sol
-var sunGeometry = new THREE.SphereGeometry(0.1, 50, 50);
-var sunMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffff00
-});
-var sol = new THREE.Mesh(sunGeometry, sunMaterial);
+var sol = scenario.buildSun(0.1, 50, 50);
 sol.position.set(0.5, 0, 2);
-sol.castShadow = false;
-sol.receiveShadow = false;
 cena.add(sol);
 
-
-
 //Criando a caixa
-var boxGeometry = new THREE.BoxGeometry(0.05, 0.15, 0.05);
-var boxMaterial = new THREE.MeshPhongMaterial({
-    color: 0xff0000
-});
-var cubo = new THREE.Mesh(boxGeometry, boxMaterial);
-cubo.position.set(-0.85, 0.16, 0);
-cubo.castShadow = false;
-cubo.receiveShadow = true;
+var carro = new Car();
+var cubo = carro.build(0.05, 0.15, 0.05);
+cubo.position.set(-0.85, 0.16, 0.03);
 cena.add(cubo);
 
 
 //Cria um holofote para projetar a sombra
-var light = new THREE.SpotLight(0xffffff, 0.7);
+var light = scenario.buildSpotlight();
 light.position.set(0.5, 0, 2);
-light.castShadow = true;
-light.target.position.set(cubo.position.x,cubo.position.y,0);
-light.shadow.camera.near = 0.1;
-light.shadow.camera.far = 10;
-light.target = cubo;
-light.angle = 0.1;
 cena.add(light);
 
 //Movimentação da Camera
