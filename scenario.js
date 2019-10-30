@@ -8,12 +8,42 @@ class Scenario {
         this.render.setSize(window.innerWidth, window.innerHeight);
         this.render.setClearColor(0x101010);
 
-        //sombra
+        //Shadow Boot
         this.render.shadowMap.enabled = true;
         this.render.shadowMap.type = THREE.BasicShadowMap;
 
         //Canvas Boot
         this.canvas = this.render.domElement;
+    }
+
+    buildCameraControl() {
+        var xi;
+        var yi;
+
+        canvas.addEventListener("mousedown", function (e) {
+            xi = e.offsetX;
+            yi = e.offsetY;
+
+        }, false);
+
+        canvas.addEventListener("mousemove", function (e) {
+
+            if (e.buttons == 1) { //mouse left button
+                camera.position.x = 8 * (xi - e.offsetX) / canvas.width;
+                camera.position.y = 8 * (e.offsetY - yi) / canvas.height;
+            }
+
+            if (e.buttons == 2) { //mouse right button
+                camera.position.y = 3 * Math.sin((e.offsetY - yi) * Math.PI / 180);
+                camera.position.z = 3 * Math.cos((e.offsetY - yi) * Math.PI / 180);
+                camera.lookAt(cena.position);
+            }
+
+            if (e.buttons == 4) { //mouse scroll
+                camera.position.z = 0.2 * (e.offsetY - yi);
+            }
+
+        }, false);
     }
 
     buildAmbientLight(x, y, z) {
@@ -22,6 +52,16 @@ class Scenario {
         return this.ambientLight;
     }
 
+    buildSpotlight() {
+        var light = new THREE.SpotLight(0xffffff, 0.7);
+        light.castShadow = true;
+        light.target.position.set(carro.position.x, carro.position.y, 0);
+        light.shadow.camera.near = 0.1;
+        light.shadow.camera.far = 10;
+        light.target = carro;
+        light.angle = 0.1;
+        return light;
+    }
 
     buildSun(x, y, z) {
         var sunGeometry = new THREE.SphereGeometry(x, y, z);
@@ -34,16 +74,6 @@ class Scenario {
         return sol;
     }
 
-    buildSpotlight() {
-        var light = new THREE.SpotLight(0xffffff, 0.7);
-        light.castShadow = true;
-        light.target.position.set(cubo.position.x, cubo.position.y, 0);
-        light.shadow.camera.near = 0.1;
-        light.shadow.camera.far = 10;
-        light.target = cubo;
-        light.angle = 0.1;
-        return light;
-    }
 
     buildBackgroundImage(imgPath, x, y, z) {
         var texture = new THREE.TextureLoader().load(imgPath);
@@ -95,7 +125,6 @@ class Scenario {
         var geometriaLinha = caminho.createPointsGeometry(300);
         return new THREE.Line(geometriaLinha, materialLinha);
     }
-
 
     getRender() {
         return this.render;

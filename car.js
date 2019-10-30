@@ -1,23 +1,23 @@
 class Car {
     contructor() {
-        this.posicao = 0;
-        this.angulo = 0;
     }
 
     build(width, height, depth) {
-        //Estrutura do Carro
+        //Car Structure
         var boxGeometry = new THREE.BoxGeometry(width, height, depth);
         var boxMaterial = new THREE.MeshPhongMaterial({
-            color: 'blue'
+            color: 'red'
         });
         var struct = new THREE.Mesh(boxGeometry, boxMaterial);
         struct.castShadow = false;
         struct.receiveShadow = true;
 
+        //Wheels
         var circleGeometry = new THREE.CircleGeometry(0.01, 32);
         var circleMaterial = new THREE.MeshPhongMaterial({
             color: 'black'
         });
+
         var roda1 = new THREE.Mesh(circleGeometry, circleMaterial);
         roda1.rotation.x = 2;
         roda1.rotation.y = 1.55;
@@ -46,22 +46,52 @@ class Car {
         roda4.position.y = -0.05;
         roda4.position.z = -0.017;
 
-        var planeGeometry = new THREE.PlaneGeometry(0.01,0.12,32);
-        var planeMaterial = new THREE.MeshPhongMaterial({
+        //Glasses
+        var sideGlassGeometry = new THREE.PlaneGeometry(0.01, 0.12, 32);
+        var sideGlassMaterial = new THREE.MeshPhongMaterial({
             color: 0x6bbd1
         });
-        var vidro1 = new THREE.Mesh(planeGeometry, planeMaterial);
+        var vidro1 = new THREE.Mesh(sideGlassGeometry, sideGlassMaterial);
         vidro1.rotation.y = 1.55;
         vidro1.position.x = 0.028;
         vidro1.position.y = 0.0005;
-        vidro1.position.z = 0.004;
+        vidro1.position.z = 0.001;
 
         var vidro2 = vidro1.clone();
         vidro2.rotation.y = -1.55;
         vidro2.position.x = -0.028;
         vidro2.position.y = 0.0005;
-        vidro2.position.z = 0.004;
+        vidro2.position.z = 0.001;
 
+        var vidro3 = vidro1.clone();
+        vidro3.rotation.y = -1.55;
+        vidro3.position.x = -0.028;
+        vidro3.position.y = 0.0005;
+        vidro3.position.z = 0.02;
+
+        var vidro4 = vidro1.clone();
+        vidro4.rotation.y = 1.55;
+        vidro4.position.x = 0.028;
+        vidro4.position.y = 0.0005;
+        vidro4.position.z = 0.02;
+
+        var glassGeometry = new THREE.PlaneGeometry(0.045, 0.025, 32);
+        var glassMaterial = new THREE.MeshPhongMaterial({
+            color: 0x6bbd1
+        });
+        var vidro5 = new THREE.Mesh(glassGeometry, glassMaterial);
+        vidro5.rotation.x = 1.55;
+        vidro5.position.x = 0.0009;
+        vidro5.position.y = -0.078;
+        vidro5.position.z = 0.015;
+
+        var vidro6 = vidro5.clone();
+        vidro6.rotation.x = -1.55;
+        vidro6.position.x = 0.0009;
+        vidro6.position.y = 0.078;
+        vidro6.position.z = 0.015;
+
+        //Grouping Structure, Wheels and Glasses into one Object 
         this.car = new THREE.Group();
         this.car.add(struct);
         this.car.add(roda1);
@@ -70,37 +100,33 @@ class Car {
         this.car.add(roda4);
         this.car.add(vidro1);
         this.car.add(vidro2);
+        this.car.add(vidro3);
+        this.car.add(vidro4);
+        this.car.add(vidro5);
+        this.car.add(vidro6);
         return this.car;
     }
 
-    //TODO Refatorar para poder usar esse metodo no main
-    movement(caminho) {
-        // Adicionando a posição para o movimento
-        this.posicao += 0.001;
+    movement() {
+        posicao += 0.001;
 
-        if (this.posicao > 1.0) {
-            this.posicao = 0.001;
+        if (posicao > 1.0) {
+            posicao = 0.001;
         }
-        // Obtendo o ponto da posição
-        var ponto = caminho.getPointAt(this.posicao);
-        console.log(ponto);
-        this.car.position.x = ponto.x;
-        this.car.position.y = ponto.y;
 
-        var angulo = this.getAngulo(this.posicao, caminho);
-        // Define o quaternion
-        this.car.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angulo);
+        var ponto = caminho.getPointAt(posicao);
+        carro.position.x = ponto.x;
+        carro.position.y = ponto.y;
+
+        var angulo = this.getAngulo(posicao);
+        carro.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angulo);
     }
 
-    getAngulo(posicao, caminho) {
-        // Pegando a tangent 2D da curva
+    getAngulo(posicao) {
         var tangente = caminho.getTangent(posicao).normalize();
+        angulo = -Math.atan(tangente.x / tangente.y);
 
-        // Mudando a tangent para 3D
-
-        this.angulo = -Math.atan(tangente.x / tangente.y);
-
-        return this.angulo;
+        return angulo;
     }
 
 }
